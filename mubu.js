@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         幕布网站英仓移除工具
+// @name         幕布网站增强工具
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  移除幕布网站(mubu.com)上的英仓元素
-// @author       You
+// @version      20250510
+// @description  幕布增强
+// @author       levonfly
 // @match        https://mubu.com/app*
 // @match        https://*.mubu.com/app*
 // @grant        none
@@ -13,32 +13,90 @@
 (function () {
     'use strict';
 
-    // 移除特定元素
+    // 监听页面
+    const observer = new MutationObserver(function (mutations) {
+        removeEnglishWarehouse();
+        if (!document.getElementById('expand-node-button')) {
+            addExpandButton();
+        }
+    });
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // 优化元素
     function removeEnglishWarehouse() {
-        const elements = document.querySelectorAll('.sc-jHcYrh.sc-bQCGiA.hanhiD.bEthKq');
-        if (elements.length > 0) {
-            console.log('找到 mubu 元素，数量:', elements.length);
-            elements.forEach(element => {
+        const sidebarList = document.getElementById('sidebar-list');
+        const divChildren = sidebarList.querySelectorAll(':scope > div');
+        const targetDivs = Array.from(divChildren).filter(div => {
+            return div.textContent.includes('模板中心') || div.textContent.includes('导入') || div.textContent.includes('与我协作') || div.textContent.includes('幕布精选') || div.textContent.includes('回收站');
+        });
+        if (targetDivs.length > 0) {
+            console.log('找到 mubu 元素，数量:', targetDivs.length);
+            targetDivs.forEach(element => {
                 element.remove();
                 console.log('已移除 mubu 元素');
             });
         }
+        const tree = document.getElementById('js-documents-tree-scroll-view');
+        tree.style.height = '100%';
     }
     removeEnglishWarehouse();
     setInterval(removeEnglishWarehouse, 2000);
 
-
+    // 添加按钮
+    function addExpandButton() {
+        if (document.getElementById('expand-node-button')) {
+            return;
+        }
+        const button = document.createElement('button');
+        button.id = 'expand-node-button';
+        button.textContent = '展开一级节点';
+        button.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 9999;
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        button.onmouseover = function () {
+            this.style.backgroundColor = '#45a049';
+        };
+        button.onmouseout = function () {
+            this.style.backgroundColor = '#4CAF50';
+        };
+        button.addEventListener('click', function () {
+            clickAllDivsInRowgroup();
+        });
+        document.body.appendChild(button);
+    }
 
     // 点击元素
     function clickAllDivsInRowgroup() {
-        const rowgroups = document.querySelectorAll('div[role="rowgroup"]');
+        const rowgroups = document.querySelectorAll('#sidebar-list div[role="rowgroup"]');
         if (rowgroups.length > 0) {
             console.log('找到rowgroup元素，数量:', rowgroups.length);
             rowgroups.forEach(rowgroup => {
                 const divs = rowgroup.querySelectorAll('div');
-                console.log(`找到${divs.length}个div子元素`);
+                /*
+                const targetDivs = Array.from(divs).filter(div => {
+                    console.log("div title", div.title)
+                    const childDivs = div.querySelectorAll(':scope > div[data-cancombine="true"]');
+                    return childDivs.length > 0; // 如果有符合条件的子div，则保留该div
+                });
+                console.log('找到 targetDivs 元素，数量:',divs.length, targetDivs.length);
+                */
                 divs.forEach((div, index) => {
                     try {
+                        // 创建并触发点击事件
                         const clickEvent = new MouseEvent('click', {
                             bubbles: true,
                             cancelable: true,
@@ -56,24 +114,5 @@
         }
     }
 
-    // 等待页面完全加载后执行
-    window.addEventListener('load', function () {
-        // 给页面一些时间完全渲染
-        setTimeout(clickAllDivsInRowgroup, 3000);
-    });
-
-    // 添加一个按钮，允许用户手动触发点击操作
-    const button = document.createElement('button');
-    button.textContent = '点击所有Rowgroup中的Div';
-    button.style.position = 'fixed';
-    button.style.top = '10px';
-    button.style.right = '10px';
-    button.style.zIndex = '9999';
-    button.addEventListener('click', clickAllDivsInRowgroup);
-    document.body.appendChild(button);
-
-
-
-
-    console.log('幕布英仓移除脚本已加载');
+    console.log('幕布脚本已加载');
 })();
