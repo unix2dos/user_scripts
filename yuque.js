@@ -13,7 +13,7 @@
 (function() {
     'use strict';
 
-
+    // 移除无用元素
     function removeNotesMenu() {
         const menuTitles = ['小记', '逛逛', 'AI 写作'];
         menuTitles.forEach(title => {
@@ -42,11 +42,46 @@
     }
 
 
+    function addHoverClassToHeadings() {
+        const engineBoxes = document.querySelectorAll('.ne-engine-box');
+        engineBoxes.forEach(engineBox => {
+            // 查找所有以 ne-h 开头的标题元素（ne-h1, ne-h2, ne-h3, ne-h4, ne-h5, ne-h6）
+            const headings = engineBox.querySelectorAll('ne-h1, ne-h2, ne-h3, ne-h4, ne-h5, ne-h6');
+            headings.forEach(heading => {
+                // 直接添加 hovered class
+                if (!heading.classList.contains('hovered')) {
+                    heading.classList.add('hovered');
+                }
+
+                // 监听 class 变化，如果 hovered 被移除就立即加回来
+                if (!heading.hasAttribute('data-force-hover')) { // 避免重复添加监听器
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                if (!heading.classList.contains('hovered')) {
+                                    heading.classList.add('hovered');
+                                }
+                            }
+                        });
+                    });
+                    observer.observe(heading, {
+                        attributes: true,
+                        attributeFilter: ['class']
+                    });
+                    heading.setAttribute('data-force-hover', 'true');
+                }
+
+            });
+        });
+    }
+
+
 
 
     // 初始执行
     removeNotesMenu();
     autoClickEditButton();
+    addHoverClassToHeadings();
 
     // 使用 MutationObserver 监听 DOM 变化
     const observer = new MutationObserver(function(mutations) {
@@ -54,6 +89,7 @@
             if (mutation.addedNodes.length) {
                 removeNotesMenu();
                 autoClickEditButton();
+                addHoverClassToHeadings();
             }
         });
     });
@@ -66,6 +102,7 @@
     setInterval(() => {
         removeNotesMenu();
         autoClickEditButton();
+        addHoverClassToHeadings();
     }, 2000);
     */
 })();
