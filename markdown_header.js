@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         markdown标题快捷键
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  修改网站快捷键
+// @version      20250527
+// @description  统一网站标题快捷键为 Cmd/Ctrl+数字
 // @match        https://*.mubu.com/*
 // @match        https://mubu.com/*
 // @match        https://*.yuque.com/*
 // @match        https://yuque.com/*
+// @match        https://*.feishu.cn/*
+// @match        https://feishu.cn/*
 // @grant        none
 // ==/UserScript==
 
@@ -16,6 +18,7 @@
     const hostname = window.location.hostname;
     const isMubu = hostname.includes('mubu.com');
     const isYuque = hostname.includes('yuque.com');
+    const isFeishu = hostname.includes('feishu.cn');
 
     // 监听 keydown 事件
     document.addEventListener('keydown', function(e) {
@@ -46,7 +49,7 @@
                     cancelable: true
                 });
                 console.log(`Mubu: 转换 Cmd+${digit} → Option+${digit}`);
-            } else if (isYuque) {
+            } else if (isYuque || isFeishu) {
                 // Yuque: Cmd+数字 → Option+Cmd+数字
                 newEvent = new KeyboardEvent('keydown', {
                     key: digit,
