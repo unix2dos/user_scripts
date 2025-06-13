@@ -2,7 +2,7 @@
 // @name         AutoDL页面优化
 // @namespace    http://tampermonkey.net/
 // @version      2025-06-13
-// @description  自动为AutoDL部署列表页面添加page_size参数，并隐藏包含"测试"和"-dev"的表格行
+// @description  自动为AutoDL部署列表页面添加page_size参数，隐藏包含"测试"和"-dev"的表格行，并按实时费用排序
 // @author       You
 // @match        https://www.autodl.com/deploy/list*
 // @grant        none
@@ -22,6 +22,98 @@
             return false; // 表示需要重定向
         }
         return true; // 表示不需要重定向，继续执行
+    }
+
+    // 提取费用数值
+    function extractPrice(text) {
+        if (!text) return 0;
+        // 匹配 ￥ 数字.数字/时 的格式
+        const match = text.match(/￥\s*(\d+(?:\.\d+)?)/);
+        return match ? parseFloat(match[1]) : 0;
+    }
+
+    // 查找费用列的索引
+    function findPriceColumnIndex(table) {
+        const headerRow = table.closest('.el-table').querySelector('.el-table__header-wrapper th');
+        if (!headerRow) return -1;
+
+        const headers = table.closest('.el-table').querySelectorAll('.el-table__header-wrapper th');
+        for (let i = 0; i < headers.length; i++) {
+            const headerText = headers[i].textContent.trim();
+            if (headerText.includes('费用') || headerText.includes('价格') || headerText.includes('实时')) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // 按费用排序表格行
+    function sortRowsByPrice() {
+        const tables = document.querySelectorAll('table.el-table__body');
+
+        tables.forEach(table => {
+            const tbody = table.querySelector('tbody') || table;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            if (rows.length === 0) return;
+
+            // 查找费用列的索引
+            const priceColumnIndex = findPriceColumnIndex(table);
+
+            // 如果找不到费用列，尝试通过内容查找
+            let actualPriceColumnIndex = priceColumnIndex;
+            if (priceColumnIndex === -1) {
+                // 检查第一行的每一列，找到包含￥符号的列
+                const firstRow = rows[0];
+                const cells = firstRow.querySelectorAll('td');
+                for (let i = 0; i < cells.length; i++) {
+                    if (cells[i].textContent.includes('￥')) {
+                        actualPriceColumnIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (actualPriceColumnIndex === -1) {
+                console.log('AutoDL优化脚本: 未找到费用列');
+                return;
+            }
+
+            // 过滤出可见的行并提取费用信息
+            const rowsWithPrice = rows
+                .filter(row => row.style.display !== 'none')
+                .map(row => {
+                    const cells = row.querySelectorAll('td');
+                    const priceCell = cells[actualPriceColumnIndex];
+                    const priceText = priceCell ? priceCell.textContent : '';
+                    const price = extractPrice(priceText);
+                    return { row, price, priceText };
+                })
+                .filter(item => item.price > 0); // 只保留有有效价格的行
+
+            // 按价格降序排序（费用高的在前）
+            rowsWithPrice.sort((a, b) => b.price - a.price);
+
+            // 重新排列DOM中的行
+            const fragment = document.createDocumentFragment();
+            rowsWithPrice.forEach(item => {
+                fragment.appendChild(item.row);
+            });
+
+            // 添加没有价格信息的行到最后
+            rows.forEach(row => {
+                if (!rowsWithPrice.find(item => item.row === row) && row.style.display !== 'none') {
+                    fragment.appendChild(row);
+                }
+            });
+
+            tbody.appendChild(fragment);
+
+            if (rowsWithPrice.length > 0) {
+                console.log(`AutoDL优化脚本: 已按费用排序 ${rowsWithPrice.length} 行数据`);
+                console.log(`费用范围: ￥${rowsWithPrice[rowsWithPrice.length-1].price}/时 - ￥${rowsWithPrice[0].price}/时`);
+            }
+        });
     }
 
     // 隐藏测试行
@@ -47,6 +139,13 @@
         }
     }
 
+    // 主处理函数
+    function processTable() {
+        hideTestRows();
+        // 延迟一点执行排序，确保隐藏操作完成
+        setTimeout(sortRowsByPrice, 50);
+    }
+
     // 防抖函数
     function debounce(func, wait) {
         let timeout;
@@ -67,11 +166,11 @@
             return; // 如果需要重定向，则停止执行
         }
 
-        // 防抖的隐藏函数
-        const debouncedHideRows = debounce(hideTestRows, 200);
+        // 防抖的处理函数
+        const debouncedProcess = debounce(processTable, 300);
 
         // 立即执行一次
-        hideTestRows();
+        setTimeout(processTable, 500); // 给页面更多时间加载
 
         // 使用MutationObserver监听DOM变化
         const observer = new MutationObserver(function(mutations) {
@@ -94,7 +193,7 @@
             }
 
             if (shouldCheck) {
-                debouncedHideRows();
+                debouncedProcess();
             }
         });
 
@@ -104,7 +203,7 @@
             subtree: true
         });
 
-        console.log('AutoDL页面优化脚本已启动');
+        console.log('AutoDL页面优化脚本已启动（包含费用排序功能）');
     }
 
     // 等待DOM准备就绪
