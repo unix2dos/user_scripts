@@ -59,12 +59,6 @@
 
             /* 确保它在 Flex 容器中不被挤压 */
             flex-shrink: 0 !important;
-
-            /* 视觉美化 */
-            background-color: #fff !important;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1) !important;
-            margin-top: 10px !important;
-            padding-bottom: 50px !important;
         }
 
         /* 4. 内容层微调 */
@@ -72,7 +66,7 @@
             width: 100% !important;
         }
     `;
-
+    // app > routerView > review_editor_container > app_content
     const style = document.createElement('style');
     style.innerHTML = css;
     document.head.appendChild(style);
