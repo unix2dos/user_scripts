@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         微信读书 - 强制伪装单页模式
+// @name         微信读书 - 双栏阅读模式强制单页
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  从 .app 根节点开始强制接管布局，实现 1059px 完美居中
@@ -38,14 +38,11 @@
             pointer-events: none !important;
         }
 
-
-        /* 强制修正控制栏位置 */
+        /* 3. 强制修正控制栏位置 */
         .readerControls {
          right: 0 !important;       /* 核心：把 -80px 覆盖为 0，拉回屏幕内 */
          /*  opacity: 1 !important;    核心：把透明度改回 1，让它可见 */
         }
-
-
     `
     // app > routerView > wr_horizontalReader > wr_horizontalReader_app_content > wr_various_font_provider_wrapper
     //    > readerChapterContent_container > readerChapterContent fontLevel1 > preRenderContainer
