@@ -31,17 +31,22 @@
         }
 
         /* 2. 隐藏顶部的工具栏 */
-        .readerTopBar {
-            display: none !important;
-            height: 0 !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
+        // .readerTopBar {
+        //     display: none !important;
+        //     height: 0 !important;
+        //     opacity: 0 !important;
+        //     pointer-events: none !important;
+        // }
 
         /* 3. 强制修正控制栏位置 */
         .readerControls {
          right: 0 !important;       /* 核心：把 -80px 覆盖为 0，拉回屏幕内 */
          /*  opacity: 1 !important;    核心：把透明度改回 1，让它可见 */
+        }
+
+        /* 4. 隐藏脚注 */
+        .reader_footer_note.js_readerFooterNote.wr_absolute {
+            display: none !important;
         }
     `
     // app > routerView > wr_horizontalReader > wr_horizontalReader_app_content > wr_various_font_provider_wrapper
